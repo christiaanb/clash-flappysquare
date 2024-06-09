@@ -31,6 +31,7 @@ strengthen x
   | x <= fromIntegral (maxBound @(Index n)) = Just $ fromIntegral x
   | otherwise = Nothing
 
+{-# INLINE between #-}
 between :: (Ord a) => a -> (a, a) -> Bool
 x `between` (lo, hi) = lo <= x && x <= hi
 
@@ -53,6 +54,7 @@ count
     => (Signal dom (Index n), Signal dom Bool)
 count = countWhen (pure True)
 
+{-# NOINLINE vgaDriver640x480at60 #-}
 vgaDriver640x480at60
     :: (HiddenClockResetEnable dom)
     => (DomainPeriod dom ~ HzToPeriod 25_175_000)
