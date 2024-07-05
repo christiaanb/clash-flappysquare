@@ -2,6 +2,7 @@
 {-# LANGUAGE NumericUnderscores #-}
 {-# LANGUAGE PostfixOperators #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ViewPatterns #-}
 module FlappySquare.GowinPLL where
 
 import Prelude
@@ -18,7 +19,7 @@ import Clash.Annotations.Primitive (Primitive(..), HDL(..), hasBlackBox)
 import Clash.Backend (Backend)
 import Clash.Netlist.Types (TemplateFunction(..), BlackBoxContext)
 
-import Clash.Signal.Internal (Clock (..), clockGen, vName, vPeriod, hzToPeriod, vSystem, createDomain)
+import Clash.Signal.Internal (Clock (..), Signal, ResetPolarity (ActiveLow), clockGen, vName, vPeriod, vResetPolarity, hzToPeriod, vSystem, createDomain)
 
 import qualified Clash.Netlist.Id as Id
 import qualified Clash.Netlist.Types as N
@@ -29,10 +30,11 @@ import Clash.Annotations.TH
 
 -- | 25 MHz clock, needed for the VGA mode we use.
 createDomain vSystem{vName="Dom27", vPeriod = hzToPeriod 27_000_000}
-createDomain vSystem{vName="Dom135", vPeriod = hzToPeriod 135_000_000}
+createDomain vSystem{vName="Dom125", vPeriod = hzToPeriod 126_000_000}
+createDomain vSystem{vName="Dom25", vPeriod = hzToPeriod 25_200_000, vResetPolarity=ActiveLow}
 
-gowinPLL :: Clock Dom27 -> Clock Dom135
-gowinPLL (Clock {}) = clockGen
+gowinPLL :: Clock Dom27 -> (Clock Dom125, Signal Dom25 Bool)
+gowinPLL (Clock {}) = (clockGen, pure True)
 {-# OPAQUE gowinPLL #-}
 {-# ANN gowinPLL hasBlackBox #-}
 {-# ANN gowinPLL
@@ -61,7 +63,7 @@ gowinPLLTF# :: Backend backend => BlackBoxContext -> State backend Doc
 gowinPLLTF# bbCtx
   | [ clkSrc
     ] <- map fst (DSL.tInputs bbCtx)
-  , [clkDst] <- DSL.tResults bbCtx
+  , [DSL.ety -> resultTy] <- DSL.tResults bbCtx
   = do
 
     let
@@ -69,8 +71,9 @@ gowinPLLTF# bbCtx
       compName = "PLLVR"
 
     instName <- Id.make (compName <> "_inst")
-    DSL.declaration (compName <> "_block") $ do
+    DSL.declarationReturn bbCtx (compName <> "_block") $ do
       lock_o <- DSL.declare "lock_o" N.Bit
+      clkout_o <- DSL.declare "clkout_o" N.Bit
       clkoutp_o <- DSL.declare "clkoutp_o" N.Bit
       clkoutd_o <- DSL.declare "clkoutd_o" N.Bit
       clkoutd3_o <- DSL.declare "clkoutd3_o" N.Bit
@@ -82,9 +85,9 @@ gowinPLLTF# bbCtx
         generics = map (second DSL.litTExpr)
           [ ("FCLKIN", "27")
           , ("DYN_IDIV_SEL", "false")
-          , ("IDIV_SEL", 0)
+          , ("IDIV_SEL", 2)
           , ("DYN_FBDIV_SEL", "false")
-          , ("FBDIV_SEL", 4)
+          , ("FBDIV_SEL", 13)
           , ("DYN_ODIV_SEL", "false")
           , ("ODIV_SEL", 8)
           , ("PSDA_SEL", "0000")
@@ -121,7 +124,7 @@ gowinPLLTF# bbCtx
 
         outs :: [(Text, DSL.TExpr)]
         outs =
-          [ ("CLKOUT", clkDst)
+          [ ("CLKOUT", clkout_o)
           , ("LOCK", lock_o)
           , ("CLKOUTP", clkoutp_o)
           , ("CLKOUTD", clkoutd_o)
@@ -135,5 +138,7 @@ gowinPLLTF# bbCtx
         generics
         inps
         outs
+
+      pure [DSL.constructProduct resultTy [clkout_o,lock_o]]
 
 gowinPLLTF# bbCtx = error (ppShow bbCtx)

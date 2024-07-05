@@ -66,7 +66,7 @@ gowinLVDSTF# bbCtx
 
     let
       compName :: Text
-      compName = "TLVDS_OBUF"
+      compName = "ELVDS_OBUF"
 
     instName <- Id.make (compName <> "_inst")
     DSL.declarationReturn bbCtx (compName <> "_block") $ do

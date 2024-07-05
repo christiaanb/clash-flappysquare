@@ -12,7 +12,7 @@ import RetroClash.VGA640x480
 import FlappySquare
 
 -- | 25 MHz clock, needed for the VGA mode we use.
-createDomain vSystem{vName="Dom25", vPeriod = hzToPeriod 25_175_000}
+createDomain vSystem{vName="Dom25", vPeriod = hzToPeriod 25_200_000}
 
 topEntity
     :: "CLK_25MHZ" ::: Clock Dom25
@@ -29,7 +29,7 @@ topEntity clk rst = withEnableGen board clk rst
 {-# NOINLINE video #-}
 video
     :: (HiddenClockResetEnable dom)
-    => (DomainPeriod dom ~ HzToPeriod 25_175_000)
+    => (DomainPeriod dom ~ HzToPeriod 25_200_000)
     => "STATE" ::: Signal dom St
     -> ("VGA" ::: VGAOut dom
        , "NEW_FRAME" ::: Signal dom Bool

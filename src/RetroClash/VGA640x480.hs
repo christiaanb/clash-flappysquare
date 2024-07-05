@@ -57,18 +57,18 @@ count = countWhen (pure True)
 {-# NOINLINE vgaDriver640x480at60 #-}
 vgaDriver640x480at60
     :: (HiddenClockResetEnable dom)
-    => (DomainPeriod dom ~ HzToPeriod 25_175_000)
+    => (DomainPeriod dom ~ HzToPeriod 25_200_000)
     => VGADriver dom ScreenWidth ScreenHeight
 vgaDriver640x480at60 = VGADriver{ vgaSync = VGASync{..}, .. }
   where
     (hcount, endLine) = count @800
-    (vcount, _) = countWhen @524 endLine
+    (vcount, _) = countWhen @525 endLine
 
     vgaX = strengthen <$> hcount
     vgaY = strengthen <$> vcount
 
     vgaHSync = sync low . (`between` (640 + 16, 640 + 16 + 96 - 1)) <$> hcount
-    vgaVSync = sync low . (`between` (480 + 11, 480 + 11 + 2 - 1)) <$> vcount
+    vgaVSync = sync low . (`between` (480 + 10, 480 + 10 + 2 - 1)) <$> vcount
     vgaDE = isJust <$> vgaX .&&. isJust <$> vgaY
 
 type Color = (Word8, Word8, Word8)

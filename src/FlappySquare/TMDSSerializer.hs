@@ -34,7 +34,7 @@ tmdsEncode ::
   Clock dom ->
   Signal dom TMDSWord ->
   Signal dom (BitVector 10)
-tmdsEncode clk i = o
+tmdsEncode clk i = delay clk enableGen 0b1101010100 o
  where
   (sN,o) = unbundle (tmdsEncode1 <$> s <*> i)
   s      = delay clk enableGen 0 sN
