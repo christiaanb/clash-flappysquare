@@ -13,7 +13,7 @@ main =
     withMainWindow videoParams $ \events keyDown -> do
         guard $ not $ keyDown ScancodeEscape
 
-        modify $ updateState $ keyDown ScancodeSpace
+        modify $ updateState (keyDown ScancodeSpace) (keyDown ScancodeBackspace)
         gets $ rasterizePattern . draw
   where
     videoParams = MkVideoParams

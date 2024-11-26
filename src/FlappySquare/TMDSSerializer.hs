@@ -1,5 +1,6 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE TupleSections #-}
+{-# LANGUAGE NumericUnderscores #-}
 module FlappySquare.TMDSSerializer where
 
 import Clash.Explicit.Prelude hiding (scanr1)
@@ -29,12 +30,13 @@ data TMDSWord
   | Control (BitVector 2)
   deriving (Eq, Show, Generic, NFDataX)
 
+{-# NOINLINE tmdsEncode #-}
 tmdsEncode ::
   KnownDomain dom =>
   Clock dom ->
   Signal dom TMDSWord ->
   Signal dom (BitVector 10)
-tmdsEncode clk i = delay clk enableGen 0b1101010100 o
+tmdsEncode clk i = o
  where
   (sN,o) = unbundle (tmdsEncode1 <$> s <*> i)
   s      = delay clk enableGen 0 sN
@@ -42,10 +44,10 @@ tmdsEncode clk i = delay clk enableGen 0b1101010100 o
 tmdsEncode1 :: Signed 4 -> TMDSWord -> (Signed 4, BitVector 10)
 tmdsEncode1 acc = \case
   Control c -> (0, ) $ case c of
-    0b00 -> 0b1101010100
-    0b01 -> 0b0010101011
-    0b10 -> 0b0101010100
-    _    -> 0b1010101011
+    0b00 -> 0b11_0101_0100
+    0b01 -> 0b00_1010_1011
+    0b10 -> 0b01_0101_0100
+    _    -> 0b10_1010_1011
   Data d ->
     let pop        = popCountBV d
 

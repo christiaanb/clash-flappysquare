@@ -41,7 +41,7 @@ gowinPLL (Clock {}) = (clockGen, pure True)
   let
     primName = show 'gowinPLL
     tfName = show 'gowinPLLTF
-  in InlineYamlPrimitive [Verilog, SystemVerilog] [__i|
+  in InlineYamlPrimitive [VHDL, Verilog, SystemVerilog] [__i|
     BlackBox:
       name: #{primName}
       kind: Declaration
@@ -113,12 +113,12 @@ gowinPLLTF# bbCtx
           , ("RESET", gw_gnd)
           , ("RESET_P", gw_gnd)
           , ("CLKFB", gw_gnd)
-          , ("FBDSEL", DSL.tuple [gw_gnd,gw_gnd,gw_gnd,gw_gnd,gw_gnd,gw_gnd])
-          , ("IDSEL", DSL.tuple [gw_gnd,gw_gnd,gw_gnd,gw_gnd,gw_gnd,gw_gnd])
-          , ("ODSEL", DSL.tuple [gw_gnd,gw_gnd,gw_gnd,gw_gnd,gw_gnd,gw_gnd])
-          , ("PSDA", DSL.tuple [gw_gnd,gw_gnd,gw_gnd,gw_gnd])
-          , ("DUTYDA", DSL.tuple [gw_gnd,gw_gnd,gw_gnd,gw_gnd])
-          , ("FDLY", DSL.tuple [gw_gnd,gw_gnd,gw_gnd,gw_gnd])
+          , ("FBDSEL", DSL.bvLit 6 0) -- [gw_gnd,gw_gnd,gw_gnd,gw_gnd,gw_gnd,gw_gnd])
+          , ("IDSEL", DSL.bvLit 6 0) -- [gw_gnd,gw_gnd,gw_gnd,gw_gnd,gw_gnd,gw_gnd])
+          , ("ODSEL", DSL.bvLit 6 0) -- [gw_gnd,gw_gnd,gw_gnd,gw_gnd,gw_gnd,gw_gnd])
+          , ("PSDA", DSL.bvLit 4 0) -- [gw_gnd,gw_gnd,gw_gnd,gw_gnd])
+          , ("DUTYDA", DSL.bvLit 4 0) -- [gw_gnd,gw_gnd,gw_gnd,gw_gnd])
+          , ("FDLY", DSL.bvLit 4 0) --  [gw_gnd,gw_gnd,gw_gnd,gw_gnd])
           , ("VREN", gw_vcc)
           ]
 
@@ -132,13 +132,15 @@ gowinPLLTF# bbCtx
           ]
 
       DSL.instDecl
-        N.Empty
+        N.Comp
         (Id.unsafeMake compName)
         instName
         generics
         inps
         outs
 
-      pure [DSL.constructProduct resultTy [clkout_o,lock_o]]
+      lock_b <- DSL.bitCoerce "lock_b" N.Bool lock_o
+
+      pure [DSL.constructProduct resultTy [clkout_o,lock_b]]
 
 gowinPLLTF# bbCtx = error (ppShow bbCtx)

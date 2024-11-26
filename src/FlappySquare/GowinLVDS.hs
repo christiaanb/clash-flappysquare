@@ -17,8 +17,8 @@ import Clash.Annotations.Primitive (Primitive(..), HDL(..), hasBlackBox)
 import Clash.Backend (Backend)
 import Clash.Netlist.Types (TemplateFunction(..), BlackBoxContext)
 
-import Clash.Sized.BitVector (Bit)
-import Clash.Signal.Internal (Signal)
+import Clash.Sized.BitVector (Bit, high, low)
+import Clash.Signal.Internal (Signal, Clock (..))
 import Clash.NamedTypes ((:::))
 
 import qualified Clash.Netlist.Id as Id
@@ -39,7 +39,23 @@ gowinLVDS s = LVDS s s
   let
     primName = show 'gowinLVDS
     tfName = show 'gowinLVDSTF
-  in InlineYamlPrimitive [Verilog, SystemVerilog] [__i|
+  in InlineYamlPrimitive [VHDL, Verilog, SystemVerilog] [__i|
+    BlackBox:
+      name: #{primName}
+      kind: Declaration
+      format: Haskell
+      templateFunction: #{tfName}
+  |] #-}
+
+gowinCLVDS :: Clock dom -> LVDS dom
+gowinCLVDS Clock{} = LVDS (pure high) (pure low)
+{-# OPAQUE gowinCLVDS #-}
+{-# ANN gowinCLVDS hasBlackBox #-}
+{-# ANN gowinCLVDS
+  let
+    primName = show 'gowinCLVDS
+    tfName = show 'gowinLVDSTF
+  in InlineYamlPrimitive [VHDL, Verilog, SystemVerilog] [__i|
     BlackBox:
       name: #{primName}
       kind: Declaration
@@ -89,7 +105,7 @@ gowinLVDSTF# bbCtx
           ]
 
       DSL.instDecl
-        N.Empty
+        N.Comp
         (Id.unsafeMake compName)
         instName
         generics

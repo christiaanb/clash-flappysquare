@@ -67,6 +67,13 @@ packages:
       size: 852
   original:
     hackage: clash-shake-0.3.2
+- completed:
+    hackage: orthotope-0.1.6.0@sha256:9613cbcb6ff90f326cf47270d466b1c75332a131fa3b66a3b1be9b1eff0e3131,3401
+    pantry-tree:
+      sha256: a579179f5de72809caadb8f599f8a3c3a23a69dfb0a7f91cb97f271dd216c613
+      size: 2742
+  original:
+    hackage: orthotope-0.1.6.0
 snapshots:
 - completed:
     sha256: 7d4b649cf368f9076d8aa049aa44efe58950971d105892734e9957b2a26a2186

@@ -17,7 +17,7 @@ main = do
 
     flip evalStateT initState $ do
         forM_ (zip [(1 :: Int)..] $ toFrames buttonPresses) $ \(i, btn) -> do
-            modify $ updateState btn
+            modify $ updateState btn False
             render <- gets draw
             let render' x y = let (r, g, b) = render (fromIntegral x) (fromIntegral y)
                               in PixelRGB8 r g b

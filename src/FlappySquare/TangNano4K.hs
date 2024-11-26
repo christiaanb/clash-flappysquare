@@ -19,11 +19,11 @@ import FlappySquare.GowinOSerdes
 
 
 
-data TMDSOut dom = TMDSOut
-    { tmdsClk :: "TMDS_CLK"   ::: LVDS dom
-    , tmdsR   :: "TMDS_RED"   ::: LVDS dom
-    , tmdsG   :: "TMDS_GREEN" ::: LVDS dom
-    , tmdsB   :: "TMDS_BLUE"  ::: LVDS dom
+data TMDSOut domPix domSer = TMDSOut
+    { tmdsClk :: "TMDS_CLK"   ::: LVDS domPix
+    , tmdsR   :: "TMDS_RED"   ::: LVDS domSer
+    , tmdsG   :: "TMDS_GREEN" ::: LVDS domSer
+    , tmdsB   :: "TMDS_BLUE"  ::: LVDS domSer
     }
 
 rstSync ::
@@ -39,44 +39,44 @@ rstSync clk ext_reset =
 
 topEntity
     :: "CLK_27MHZ" ::: Clock Dom27
-    -> "RESETN"    ::: Reset Dom25
+    -> "RESETN"    ::: Signal Dom25 (Active Low)
     -> "BTN"       ::: Signal Dom25 (Active Low)
-    -> ( "HDMI"    ::: TMDSOut Dom125
+    -> ( "HDMI"    ::: TMDSOut Dom25 Dom125
        , "LED"     ::: Signal Dom25 Bool
        )
 topEntity clk rst btn =
-  ( TMDSOut (gowinLVDS hdmiClk) (gowinLVDS redS) (gowinLVDS greenS) (gowinLVDS blueS)
+  ( TMDSOut (gowinCLVDS clkPix) (gowinLVDS redS) (gowinLVDS greenS) (gowinLVDS blueS)
   , led
   )
  where
-  (VGAOut{..}, led) = flappy clkPix rstS (toActive . fromActive <$> btn)
+  (VGAOut{..}, led) = flappy clkPix rstS (toActive . fromActive <$> rst) (toActive . fromActive <$> btn)
   VGASync{..} = vgaSync
   clkPix = gowinClkDiv clkSer (unsafeFromActiveLow pllLock)
   (clkSer, pllLock) = gowinPLL clk
-  rstS = rstSync clkPix (unsafeFromActiveLow (unsafeToActiveLow rst .&&. pllLock))
+  rstS = rstSync clkPix (unsafeFromActiveLow pllLock)
 
-  hdmiClk = setName @"serializerClk" gowinOSER10 clkPix clkSer
-              (pure (high :> high :> high :> high :> high :>
-                     low  :> low :> low :> low :> low :>
-                      Nil))
+  -- hdmiClk = setName @"serializerClk" gowinOSER10 clkPix clkSer
+  --             (pure (high :> high :> high :> high :> high :>
+  --                    low  :> low :> low :> low :> low :>
+  --                     Nil))
 
   redS = setName @"redSerializer" synchEncSerializer
             (pack <$> vgaR)
-            (pack <$> (bundle (vgaHSync,vgaVSync)))
+            (pure 0) -- (pack <$> (bundle (vgaHSync,vgaVSync)))
             vgaDE
             clkPix
             clkSer
 
   greenS = setName @"greenSerializer" synchEncSerializer
             (pack <$> vgaG)
-            (pure 0)
+            (pure 0) -- (pack <$> (bundle (vgaHSync,vgaVSync)))
             vgaDE
             clkPix
             clkSer
 
   blueS = setName @"blueSerializer" synchEncSerializer
             (pack <$> vgaB)
-            (pure 0)
+            (pack <$> bundle (vgaVSync,vgaHSync))
             vgaDE
             clkPix
             clkSer
@@ -85,18 +85,19 @@ topEntity clk rst btn =
 flappy
     :: "CLK_27MHZ" ::: Clock Dom25
     -> "RESET"     ::: Reset Dom25
+    -> "BTN2"      ::: Signal Dom25 (Active High)
     -> "BTN"       ::: Signal Dom25 (Active High)
     -> ("VGA"      ::: VGAOut Dom25
        ,"LED"      ::: Signal Dom25 Bool
        )
 flappy clk rst = withEnableGen board clk rst
   where
-    board (fmap fromActive -> btn) = (vga, led)
+    board (fmap fromActive -> btn2) (fmap fromActive -> btn) = (vga, led)
       where
-        state = regEn initState newFrame (updateState <$> btn <*> state)
+        state = regEn initState newFrame (updateState <$> btn <*> btn2 <*> state)
         (vga, newFrame) = video state
         led = regEn False (cnt .==. pure maxBound) (not <$> led)
-        cnt = register (0 :: Index 25_200_000)
+        cnt = register (0 :: Index (Div 25_200_000 2))
                    (satAdd SatWrap 1 <$> cnt)
 
 

@@ -27,6 +27,8 @@ dependencies:
   - pretty-show
   - string-interpolate
   - text
+  - array
+  - orthotope
 
 # Anything that Clash uses by default should go here
 default-extensions:
@@ -90,7 +92,7 @@ executables:
     dependencies:
       - JuicyPixels
       - mtl
-      
+
   flappysquare-editor:
     main: simulator-editor.hs
     dependencies:

@@ -43,7 +43,7 @@ gowinOSER10 Clock{} Clock{} = go
   let
     primName = show 'gowinOSER10
     tfName = show 'gowinOSER10TF
-  in InlineYamlPrimitive [Verilog, SystemVerilog] [__i|
+  in InlineYamlPrimitive [VHDL, Verilog, SystemVerilog] [__i|
     BlackBox:
       name: #{primName}
       kind: Declaration
@@ -115,7 +115,7 @@ gowinOSER10TF# bbCtx
           ]
 
       DSL.instDecl
-        N.Empty
+        N.Comp
         (Id.unsafeMake compName)
         instName
         generics

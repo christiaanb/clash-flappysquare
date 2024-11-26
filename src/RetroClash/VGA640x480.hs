@@ -28,8 +28,10 @@ data VGADriver dom w h = VGADriver
 
 strengthen :: forall n k. (KnownNat n, KnownNat k) => Index (n + k) -> Maybe (Index n)
 strengthen x
-  | x <= fromIntegral (maxBound @(Index n)) = Just $ fromIntegral x
+  | x >= k = Just $ fromIntegral (x - k)
   | otherwise = Nothing
+  where
+    k = snatToNum (SNat @k)
 
 {-# INLINE between #-}
 between :: (Ord a) => a -> (a, a) -> Bool
@@ -67,8 +69,8 @@ vgaDriver640x480at60 = VGADriver{ vgaSync = VGASync{..}, .. }
     vgaX = strengthen <$> hcount
     vgaY = strengthen <$> vcount
 
-    vgaHSync = sync low . (`between` (640 + 16, 640 + 16 + 96 - 1)) <$> hcount
-    vgaVSync = sync low . (`between` (480 + 10, 480 + 10 + 2 - 1)) <$> vcount
+    vgaHSync = sync high . (`between` (16, 16 + 96 - 1)) <$> hcount
+    vgaVSync = sync high . (`between` (10, 10 + 2 - 1)) <$> vcount
     vgaDE = isJust <$> vgaX .&&. isJust <$> vgaY
 
 type Color = (Word8, Word8, Word8)

@@ -16,14 +16,14 @@ createDomain vSystem{vName="Dom25", vPeriod = hzToPeriod 25_200_000}
 
 topEntity
     :: "CLK_25MHZ" ::: Clock Dom25
-    -> "RESET"     ::: Reset Dom25
+    -> "RESET"     ::: Signal Dom25 (Active High)
     -> "BTN"       ::: Signal Dom25 (Active High)
     -> "VGA"       ::: VGAOut Dom25
-topEntity clk rst = withEnableGen board clk rst
+topEntity clk rst = withEnableGen (board rst) clk (unsafeFromActiveHigh (pure False))
   where
-    board (fmap fromActive -> btn) = vga
+    board (fmap fromActive -> btn2) (fmap fromActive -> btn) = vga
       where
-        state = regEn initState newFrame (updateState <$> btn <*> state)
+        state = regEn initState newFrame (updateState <$> btn <*> btn2 <*> state)
         (vga, newFrame) = video state
 
 {-# NOINLINE video #-}

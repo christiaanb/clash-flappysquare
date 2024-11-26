@@ -14,25 +14,27 @@ import RetroClash.Sim.VGASDL
 import Control.Monad.State
 import Control.Monad.Loops
 
-board' btn =
-    let VGAOut{ vgaSync = VGASync{..}, ..} = topEntity clockGen resetGen btn
-    in bundle (vgaHSync, vgaVSync, bitCoerce <$> bundle (vgaR, vgaG, vgaB))
+board' btns =
+    let (btn,btn2) = unbundle btns
+        VGAOut{ vgaSync = VGASync{..}, ..} = topEntity clockGen btn2 btn
+    in  bundle (vgaHSync, vgaVSync, bitCoerce <$> bundle (vgaR, vgaG, vgaB))
 
 main :: IO ()
 main = do
     buf <- newBufferArray
 
-    sim <- simulateIO board' (toActive False)
+    sim <- simulateIO board' (toActive False,toActive False)
 
     flip evalStateT initSink $ withMainWindow videoParams $ \events keyDown -> do
         guard $ not $ keyDown ScancodeEscape
 
         let btn = toActive $ keyDown ScancodeSpace
+            btn2 = toActive $ keyDown ScancodeA
 
         untilM_ (return ()) $ do
             sim $ \vgaOut -> do
                 frameDone <- vgaSinkBuf vga640x480at60 buf vgaOut
-                return (btn, frameDone)
+                return ((btn,btn2), frameDone)
 
         return $ rasterizeBuffer buf
   where

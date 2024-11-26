@@ -9,6 +9,7 @@ data St = MkSt
     , birdSpeed  :: !(Signed 10)
     , pipeOffset :: !(Index ScreenWidth)
     , gameOver   :: !Bool
+    , autoPilot  :: !Bool
     }
     deriving (Show, Generic, NFDataX)
 
@@ -18,6 +19,7 @@ initState = MkSt
     , birdSpeed  = 0
     , birdY      = 200
     , gameOver   = False
+    , autoPilot  = True
     }
 
 birdX :: Index ScreenWidth
@@ -36,22 +38,25 @@ pipes =
     (200, 410) :>
     (230, 400) :>
     (130, 380) :>
-    (90,  320) :>
+    (90,  330) :>
     (110, 280) :>
     Nil
 
-updateState :: Bool -> St -> St
-updateState btn st@MkSt{..}
-  | gameOver = initState
+updateState :: Bool -> Bool -> St -> St
+updateState btn btn2 st@MkSt{..}
+  | gameOver = initState {autoPilot = autoPilot}
   | otherwise = st
     { pipeOffset = satAdd SatWrap 1 pipeOffset
-    , birdSpeed = if btn then birdSpeed - 5 else birdSpeed + 1
+    , birdSpeed = if btn then birdSpeed - 5 else birdSpeedAuto
     , birdY = birdY + birdSpeed `shiftR` 3
     , gameOver = not birdClear
+    , autoPilot = if btn2 then not autoPilot else autoPilot
     }
   where
     (top, bottom, offset) = pipeAt birdX st
     birdClear = fromIntegral birdY `between` (top + 20, bottom - 20)
+    birdSafeBottom = fromIntegral birdY <= (bottom - 55)
+    birdSpeedAuto = if autoPilot && ((not birdSafeBottom || birdSpeed > 17) && (birdSpeed >= (-38))) then birdSpeed - 5 else birdSpeed + 1
 
 pipeAt :: Index ScreenWidth -> St -> (Index ScreenHeight, Index ScreenHeight, Index 64)
 pipeAt x MkSt{..} = (top, bottom, offset)
@@ -78,8 +83,8 @@ draw st@MkSt{..} x y
       | otherwise   = green
 
 blue, yellow, red, gray, green, lightGreen :: Color
-blue = (0x40, 0x80, 0xf0)
-yellow = (0xf0, 0xe0, 0x40)
+blue = (0x80, 0x80, 0xf0)
+yellow = (0x00, 0x00, 0x00)
 red = (0x80, 0x00, 0x00)
 green = (0x92, 0xe2, 0x44)
 lightGreen = (0xa5, 0xff, 0x4d)
